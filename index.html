@@ -3,849 +3,497 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>เกมบันไดงู - ระบบย่อยอาหาร</title>
+  <title>Memory ระบบหายใจ</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="/_sdk/element_sdk.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
   <style>
-    * { font-family: 'Kanit', sans-serif; }
-    .player-token {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      position: absolute;
-      border: 2px solid white;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      font-weight: bold;
-      color: white;
-    }
-    .cell {
-      position: relative;
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 1.2rem;
-      border: 2px solid rgba(139,69,19,0.3);
-      transition: all 0.2s;
-    }
-    .cell:hover {
-      transform: scale(1.05);
-      z-index: 10;
-    }
-    .snake-cell { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); }
-    .ladder-cell { background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); }
-    .normal-cell { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
-    .start-cell { background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%); }
-    .end-cell { background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%); }
+    * { font-family: 'Prompt', sans-serif; }
     
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-    @keyframes shake {
-      0%, 100% { transform: rotate(0deg); }
-      25% { transform: rotate(-5deg); }
-      75% { transform: rotate(5deg); }
-    }
-    .dice-rolling {
-      animation: shake 0.1s infinite;
-    }
-    .winner-animation {
-      animation: bounce 0.5s infinite;
+    .card-container {
+      perspective: 1000px;
     }
     
-    .modal-overlay {
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(4px);
+    .card-inner {
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
     }
     
-    .organ-icon {
-      font-size: 1.5rem;
+    .card-flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+    
+    .card-front, .card-back {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    
+    .card-back {
+      transform: rotateY(180deg);
+    }
+    
+    .card-matched {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    .player-active {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+      50% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+    }
+    
+    @keyframes celebrate {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    
+    .celebrate {
+      animation: celebrate 0.5s ease-in-out;
+    }
+    
+    .lung-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .btn-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
     }
   </style>
   <style>body { box-sizing: border-box; }</style>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
  </head>
- <body class="h-full overflow-auto">
-  <div id="app" class="min-h-full w-full bg-gradient-to-br from-amber-100 via-orange-50 to-yellow-100">
-   <!-- หน้าเลือกจำนวนผู้เล่น -->
-   <div id="player-select-screen" class="min-h-full flex flex-col items-center justify-center p-8">
-    <div class="text-center mb-8">
+ <body class="h-full">
+  <div id="app" class="h-full w-full lung-bg overflow-auto"><!-- Screen 1: Player Selection -->
+   <div id="screen-players" class="min-h-full flex items-center justify-center p-4">
+    <div class="glass-card rounded-3xl p-8 max-w-md w-full shadow-2xl">
+     <div class="text-center mb-8">
+      <div class="text-6xl mb-4">
+       🫁
+      </div>
+      <h1 id="main-title" class="text-3xl font-bold text-gray-800 mb-2">Memory ระบบหายใจ</h1>
+      <p class="text-gray-600">จับคู่อวัยวะกับหน้าที่ให้ถูกต้อง</p>
+     </div>
+     <div class="mb-6"><label class="block text-gray-700 font-medium mb-3 text-center">เลือกจำนวนผู้เล่น</label>
+      <div class="grid grid-cols-2 gap-3"><button onclick="selectPlayers(1)" class="btn-hover bg-gradient-to-r from-blue-500 to-blue-600 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 hover:from-blue-600 hover:to-blue-700"> 👤 1 คน </button> <button onclick="selectPlayers(2)" class="btn-hover bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 hover:from-green-600 hover:to-green-700"> 👥 2 คน </button> <button onclick="selectPlayers(3)" class="btn-hover bg-gradient-to-r from-purple-500 to-purple-600 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 hover:from-purple-600 hover:to-purple-700"> 👥 3 คน </button> <button onclick="selectPlayers(4)" class="btn-hover bg-gradient-to-r from-orange-500 to-orange-600 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 hover:from-orange-600 hover:to-orange-700"> 👥 4 คน </button>
+      </div>
+     </div>
+     <div class="mb-6"><label class="block text-gray-700 font-medium mb-3 text-center">เลือกขนาดกระดาน</label>
+      <div class="grid grid-cols-2 gap-3"><button onclick="selectBoardSize('4x4')" id="btn-4x4" class="btn-hover bg-gradient-to-r from-pink-500 to-pink-600 text-white py-3 rounded-xl font-semibold transition-all duration-300 ring-4 ring-pink-300"> 4×4 (8 คู่) </button> <button onclick="selectBoardSize('6x6')" id="btn-6x6" class="btn-hover bg-gradient-to-r from-indigo-400 to-indigo-500 text-white py-3 rounded-xl font-semibold transition-all duration-300"> 6×6 (18 คู่) </button>
+      </div>
+     </div>
+    </div>
+   </div><!-- Screen 2: Name Input -->
+   <div id="screen-names" class="min-h-full flex items-center justify-center p-4 hidden">
+    <div class="glass-card rounded-3xl p-8 max-w-md w-full shadow-2xl">
+     <div class="text-center mb-6">
+      <div class="text-5xl mb-3">
+       ✏️
+      </div>
+      <h2 class="text-2xl font-bold text-gray-800">ลงชื่อผู้เล่น</h2>
+     </div>
+     <div id="name-inputs" class="space-y-4 mb-6"></div><button onclick="startGame()" class="btn-hover w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-4 rounded-xl font-bold text-xl transition-all duration-300 hover:from-emerald-600 hover:to-teal-600"> 🎮 เริ่มเกม! </button> <button onclick="goBack()" class="w-full mt-3 bg-gray-200 text-gray-700 py-3 rounded-xl font-medium transition-all duration-300 hover:bg-gray-300"> ← ย้อนกลับ </button>
+    </div>
+   </div><!-- Screen 3: Game Board -->
+   <div id="screen-game" class="min-h-full p-4 hidden"><!-- Player Scores -->
+    <div id="player-scores" class="flex flex-wrap justify-center gap-3 mb-4"></div><!-- Current Turn -->
+    <div class="text-center mb-4">
+     <div class="inline-block glass-card rounded-full px-6 py-2 shadow-lg"><span class="text-gray-600">ตาของ: </span> <span id="current-player" class="font-bold text-blue-600"></span>
+     </div>
+    </div><!-- Game Board -->
+    <div id="game-board" class="max-w-2xl mx-auto"></div><!-- Message -->
+    <div id="game-message" class="text-center mt-4 text-white font-medium text-lg"></div>
+   </div><!-- Screen 4: Results -->
+   <div id="screen-results" class="min-h-full flex items-center justify-center p-4 hidden">
+    <div class="glass-card rounded-3xl p-8 max-w-md w-full shadow-2xl text-center">
      <div class="text-6xl mb-4">
-      🐍🪜
-     </div>
-     <h1 id="main-title" class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600 mb-2">เกมบันไดงู</h1>
-     <p class="text-2xl md:text-3xl font-bold text-amber-700">🍽️ ระบบย่อยอาหาร 🍽️</p>
-     <div class="mt-4 flex justify-center gap-2 text-3xl">
-      <span>🦷</span><span>👅</span><span>🫁</span><span>🫀</span><span>🧠</span>
-     </div>
-    </div>
-    <div class="bg-white/90 rounded-3xl p-8 shadow-2xl max-w-md w-full">
-     <h2 class="text-2xl font-bold text-center text-amber-800 mb-6">เลือกจำนวนผู้เล่น</h2>
-     <div class="grid grid-cols-2 gap-4">
-      <button onclick="selectPlayerCount(2)" class="bg-gradient-to-r from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all"> 👥 2 คน </button> <button onclick="selectPlayerCount(3)" class="bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all"> 👥 3 คน </button> <button onclick="selectPlayerCount(4)" class="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all"> 👥 4 คน </button> <button onclick="selectPlayerCount(5)" class="bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all"> 👥 5 คน </button> <button onclick="selectPlayerCount(6)" class="col-span-2 bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white text-xl font-bold py-4 px-6 rounded-2xl shadow-lg transform hover:scale-105 transition-all"> 👥 6 คน </button>
-     </div>
-    </div>
-   </div><!-- หน้าลงชื่อผู้เล่น -->
-   <div id="name-input-screen" class="min-h-full flex flex-col items-center justify-center p-8 hidden">
-    <div class="text-center mb-6">
-     <div class="text-5xl mb-2">
-      📝
-     </div>
-     <h1 class="text-3xl md:text-4xl font-extrabold text-amber-800">ลงชื่อผู้เล่น</h1>
-    </div>
-    <div class="bg-white/90 rounded-3xl p-8 shadow-2xl max-w-lg w-full">
-     <div id="name-inputs" class="space-y-4">
-      <!-- จะถูกสร้างโดย JavaScript -->
-     </div>
-     <div class="flex gap-4 mt-6">
-      <button onclick="goBack()" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white text-xl font-bold py-3 px-6 rounded-2xl shadow-lg transition-all"> ← ย้อนกลับ </button> <button onclick="startGame()" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-xl font-bold py-3 px-6 rounded-2xl shadow-lg transition-all"> เริ่มเกม! 🎮 </button>
-     </div>
-    </div>
-   </div><!-- หน้าเกม -->
-   <div id="game-screen" class="min-h-full p-4 hidden">
-    <div class="max-w-6xl mx-auto">
-     <!-- Header -->
-     <div class="text-center mb-4">
-      <h1 class="text-2xl md:text-3xl font-extrabold text-amber-800">🐍 เกมบันไดงู - ระบบย่อยอาหาร 🪜</h1>
-     </div><!-- ข้อมูลผู้เล่น -->
-     <div id="players-info" class="flex flex-wrap justify-center gap-3 mb-4">
-      <!-- จะถูกสร้างโดย JavaScript -->
-     </div><!-- กระดานเกม -->
-     <div class="flex flex-col lg:flex-row gap-4 items-start justify-center">
-      <!-- กระดาน -->
-      <div class="bg-amber-200/80 p-3 rounded-2xl shadow-xl">
-       <div id="game-board" class="grid grid-cols-7 gap-1" style="width: min(500px, 90vw);">
-        <!-- จะถูกสร้างโดย JavaScript -->
-       </div>
-      </div><!-- ลูกเต๋าและปุ่ม -->
-      <div class="bg-white/90 rounded-2xl p-6 shadow-xl text-center">
-       <div id="current-player-display" class="text-xl font-bold text-amber-800 mb-4">
-        ตาของ: <span id="current-player-name">-</span>
-       </div>
-       <div id="dice-container" class="mb-4">
-        <div id="dice" class="text-7xl cursor-pointer select-none" onclick="rollDice()">
-         🎲
-        </div>
-        <div id="dice-result" class="text-2xl font-bold text-amber-700 mt-2">
-         กดลูกเต๋าเพื่อทอย
-        </div>
-       </div><button id="roll-btn" onclick="rollDice()" class="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white text-xl font-bold py-3 px-8 rounded-2xl shadow-lg transform hover:scale-105 transition-all"> 🎲 ทอยลูกเต๋า </button> <!-- กติกา -->
-       <div class="mt-6 text-left bg-amber-50 rounded-xl p-4 text-sm">
-        <h3 class="font-bold text-amber-800 mb-2">📜 กติกา:</h3>
-        <ul class="space-y-1 text-amber-700">
-         <li>🎯 ตอบถูก = เดินได้ตามลูกเต๋า</li>
-         <li>❌ ตอบผิด = อยู่ที่เดิม</li>
-         <li>🐍 งู + ตอบถูก = ไม่โดนกัด</li>
-         <li>🐍 งู + ตอบผิด = ถอยหลัง 3 ช่อง</li>
-         <li>🪜 บันได + ตอบถูก = ขึ้นไป 3 ช่อง</li>
-         <li>🪜 บันได + ตอบผิด = อยู่ที่เดิม</li>
-         <li>🏆 ถึงช่อง 40 = ชนะ!</li>
-        </ul>
-       </div>
-      </div>
-     </div>
-    </div>
-   </div><!-- Modal คำถาม -->
-   <div id="question-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-4 hidden z-50">
-    <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl transform scale-100">
-     <div class="text-center mb-4">
-      <div id="question-icon" class="text-5xl mb-2">
-       🤔
-      </div>
-      <h2 class="text-2xl font-bold text-amber-800">คำถามระบบย่อยอาหาร</h2>
-      <p id="question-context" class="text-sm text-amber-600 mt-1"></p>
-     </div>
-     <div id="question-text" class="text-xl font-semibold text-gray-800 mb-6 text-center p-4 bg-amber-50 rounded-xl">
-      <!-- คำถามจะแสดงที่นี่ -->
-     </div>
-     <div id="answer-options" class="space-y-3">
-      <!-- ตัวเลือกจะแสดงที่นี่ -->
-     </div>
-    </div>
-   </div><!-- Modal ผลลัพธ์ -->
-   <div id="result-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-4 hidden z-50">
-    <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center">
-     <div id="result-icon" class="text-6xl mb-4">
-      ✅
-     </div>
-     <h2 id="result-title" class="text-3xl font-bold mb-2">ถูกต้อง!</h2>
-     <p id="result-message" class="text-xl text-gray-600 mb-6"></p><button onclick="closeResultModal()" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xl font-bold py-3 px-8 rounded-2xl shadow-lg"> ดำเนินการต่อ </button>
-    </div>
-   </div><!-- Modal ผู้ชนะ -->
-   <div id="winner-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-4 hidden z-50">
-    <div class="bg-gradient-to-br from-yellow-100 to-amber-200 rounded-3xl p-8 max-w-md w-full shadow-2xl text-center">
-     <div class="text-6xl mb-4 winner-animation">
       🏆
      </div>
-     <h2 class="text-4xl font-extrabold text-amber-800 mb-2">ยินดีด้วย!</h2>
-     <p id="winner-name" class="text-2xl font-bold text-amber-600 mb-4"></p>
-     <div class="text-5xl mb-6">
-      🎉🎊🎉
-     </div><button onclick="restartGame()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-xl font-bold py-3 px-8 rounded-2xl shadow-lg"> เล่นใหม่ 🔄 </button>
+     <h2 class="text-3xl font-bold text-gray-800 mb-2">จบเกม!</h2>
+     <div id="winner-announce" class="text-xl text-purple-600 font-semibold mb-6"></div>
+     <div id="final-scores" class="space-y-3 mb-6"></div><button onclick="restartGame()" class="btn-hover w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 rounded-xl font-bold text-xl transition-all duration-300 hover:from-blue-600 hover:to-purple-600"> 🔄 เล่นใหม่ </button>
     </div>
    </div>
   </div>
   <script>
-    // ค่าเริ่มต้น
+    // Game Configuration
     const defaultConfig = {
-      game_title: 'เกมบันไดงู ระบบย่อยอาหาร'
+      game_title: 'Memory ระบบหายใจ'
     };
     
     let config = { ...defaultConfig };
     
-    // ตัวแปรเกม
-    let playerCount = 0;
-    let players = [];
-    let currentPlayerIndex = 0;
-    let isRolling = false;
-    let currentQuestion = null;
-    let pendingMove = 0;
-    let landedCell = 0;
+    // Respiratory System Card Pairs (Organ ↔ Function)
+    const cardPairs = [
+      { organ: '👃 จมูก', function: 'กรองและทำความชื้นอากาศ' },
+      { organ: '🫁 ปอด', function: 'แลกเปลี่ยนก๊าซ O₂ และ CO₂' },
+      { organ: '💨 หลอดลม', function: 'ทางผ่านของอากาศสู่ปอด' },
+      { organ: '🔴 ถุงลม', function: 'พื้นที่แลกเปลี่ยนก๊าซในปอด' },
+      { organ: '🎤 กล่องเสียง', function: 'สร้างเสียงและปิดทางเดินอาหาร' },
+      { organ: '📍 คอหอย', function: 'ทางแยกอาหารและอากาศ' },
+      { organ: '🌬️ กะบังลม', function: 'กล้ามเนื้อควบคุมการหายใจ' },
+      { organ: '🦠 ขนกวัด', function: 'กวาดสิ่งแปลกปลอมออกจากทางเดินหายใจ' },
+      { organ: '💧 เมือก', function: 'ดักจับฝุ่นและเชื้อโรค' },
+      { organ: '🫀 หลอดเลือดฝอย', function: 'รับ O₂ และปล่อย CO₂' },
+      { organ: '🌡️ โพรงจมูก', function: 'ปรับอุณหภูมิอากาศ' },
+      { organ: '💪 กล้ามเนื้อซี่โครง', function: 'ช่วยขยายและหดช่องอก' },
+      { organ: '🛡️ เยื่อบุจมูก', function: 'ป้องกันเชื้อโรคเข้าสู่ร่างกาย' },
+      { organ: '⭕ หลอดลมฝอย', function: 'กระจายอากาศไปยังถุงลม' },
+      { organ: '🔵 ออกซิเจน', function: 'ก๊าซที่เซลล์ใช้สร้างพลังงาน' },
+      { organ: '⚫ คาร์บอนไดออกไซด์', function: 'ของเสียจากการหายใจระดับเซลล์' },
+      { organ: '🌊 เยื่อหุ้มปอด', function: 'หล่อลื่นการเคลื่อนไหวของปอด' },
+      { organ: '🎯 ศูนย์หายใจ', function: 'ควบคุมจังหวะการหายใจในสมอง' }
+    ];
     
-    // สีผู้เล่น
+    // Game State
+    let gameState = {
+      playerCount: 1,
+      boardSize: '4x4',
+      players: [],
+      currentPlayerIndex: 0,
+      cards: [],
+      flippedCards: [],
+      matchedPairs: 0,
+      totalPairs: 8,
+      isProcessing: false
+    };
+    
     const playerColors = [
-      '#ef4444', // แดง
-      '#3b82f6', // น้ำเงิน
-      '#22c55e', // เขียว
-      '#f59e0b', // เหลือง
-      '#8b5cf6', // ม่วง
-      '#ec4899'  // ชมพู
+      'from-blue-500 to-blue-600',
+      'from-green-500 to-green-600',
+      'from-purple-500 to-purple-600',
+      'from-orange-500 to-orange-600'
     ];
     
-    // ช่องงู (โดนกัดถอย 3 ช่อง)
-    const snakes = [7, 15, 23, 31, 38];
-    
-    // ช่องบันได (ขึ้นไป 3 ช่อง)
-    const ladders = [4, 12, 20, 28, 35];
-    
-    // คำถามระบบย่อยอาหาร ระดับม.5 (41 ข้อ) - คำตอบกระจายไปทั่ว
-    const questions = [
-      {
-        q: "เอนไซม์ซาลิวารี อะไมเลส เริ่มย่อยกลูโคสขั้นตอนแรกโดยการแยก?",
-        options: ["พันธะ α-1,4-glycosidic", "พันธะ α-1,6-glycosidic", "พันธะ ester", "พันธะ peptide"],
-        correct: 0,
-        icon: "🧬"
-      },
-      {
-        q: "กรดไฮโดรคลอริกในกระเพาะอาหารมีปริมาณเข้มข้นประมาณเท่าไร?",
-        options: ["0.01 M", "0.1-0.3 M", "1-2 M", "0.001 M"],
-        correct: 1,
-        icon: "🧪"
-      },
-      {
-        q: "ปรึกษา (pepsinogen) ถูกกระตุ้นให้เป็นเปปซิน (pepsin) ในสภาพใด?",
-        options: ["สภาพด่างในลำไส้เล็ก", "สภาพด่างในกระเพาะ", "สภาพกรดในกระเพาะ", "สภาพเป็นกลางในปาก"],
-        correct: 2,
-        icon: "⚗️"
-      },
-      {
-        q: "น้ำดีจากตับทำให้ไขมันแตกตัวเป็นอนุภาคเล็กขึ้นเรียกว่า?",
-        options: ["absorption", "digestion", "fermentation", "emulsification"],
-        correct: 3,
-        icon: "💧"
-      },
-      {
-        q: "ตับอ่อนหลั่งน้ำย่อยตอบสนองต่อการหลั่งเมื่อใดในกระบวนการย่อยอาหาร?",
-        options: ["เมื่ออาหารเข้าสู่ปาก", "เมื่ออาหารเข้าสู่กระเพาะ", "เมื่ออาหารออกจากลำไส้ใหญ่", "เมื่ออาหารเข้าสู่ลำไส้เล็ก"],
-        correct: 3,
-        icon: "🔔"
-      },
-      {
-        q: "โปรเตียส (protease) ประกอบด้วยเอนไซม์ใดต่อไปนี้?",
-        options: ["อะไมเลส ไลเปส", "นิวคลีเอส ไลเกส", "ลีเฟเรเรส ซูเครส", "เปปซิน ทริปซิน คิโมทริปซิน"],
-        correct: 3,
-        icon: "🧪"
-      },
-      {
-        q: "เมื่ออาหารผ่านจากกระเพาะเข้าลำไส้เล็ก hormone ใดจากลำไส้เล็ก จะกระตุ้นการหลั่งน้ำดี?",
-        options: ["insulin", "glucagon", "adrenaline", "cholecystokinin (CCK)"],
-        correct: 3,
-        icon: "🔬"
-      },
-      {
-        q: "วิลลัสและไมโครวิลลัสบนผนังลำไส้เล็กมีหน้าที่เพิ่มพื้นผิวการดูดซึมเป็นกี่เท่า?",
-        options: ["10-20 เท่า", "50-100 เท่า", "2-5 เท่า", "300-600 เท่า"],
-        correct: 3,
-        icon: "🔬"
-      },
-      {
-        q: "ไลเปส (lipase) จากตับอ่อนย่อยไขมันเป็นสารประกอบใด?",
-        options: ["glucose และ amino acids", "nucleotides และ bases", "ammonia และ CO2", "monoglyceride และ fatty acids"],
-        correct: 3,
-        icon: "🧈"
-      },
-      {
-        q: "คาร์บอหมิเดเรส (carbohydrase) ที่หลักต่อไปนี้ไม่ถูกต้อง?",
-        options: ["อะไมเลส ย่อยแป้ง ในลำไส้เล็ก", "ซูเครส ย่อยน้ำตาล ในลำไส้เล็ก", "ลัคเทส ย่อยลักโตส ในลำไส้เล็ก", "เปปซิน ย่อยแป้ง ในกระเพาะ"],
-        correct: 3,
-        icon: "🍞"
-      },
-      {
-        q: "ในระหว่างการหมัก (chewing) ในปาก อาหารรับการกระตุ้นจากเส้นประสาท?",
-        options: ["hypoglossal nerve (CN XII)", "vagus nerve (CN X)", "facial nerve (CN VII)", "trigeminal nerve (CN V)"],
-        correct: 3,
-        icon: "🧠"
-      },
-      {
-        q: "HCl ในกระเพาะมีบทบาทสำคัญในการ?",
-        options: ["ดูดซึมพลังงาน", "ผลิตลาเตสหมาก", "หลั่ง peptide hormone", "denature โปรตีน และเปิดใจกว่า 1 ด้วยปรึกษา"],
-        correct: 3,
-        icon: "🧪"
-      },
-      {
-        q: "กระเพาะอาหารมีความจุสูงสุดประมาณเท่าไร?",
-        options: ["100 มิลลิลิตร", "5-10 มิลลิลิตร", "3-5 ลิตร", "1-1.5 ลิตร"],
-        correct: 3,
-        icon: "🫙"
-      },
-      {
-        q: "ตับอ่อน (pancreas) ผลิตน้ำย่อยมี pH ประมาณเท่าไรเพื่อทำให้สภาพเป็นกลางในลำไส้เล็ก?",
-        options: ["1.5-2", "5-6", "11-12", "8.0-8.3"],
-        correct: 3,
-        icon: "🧪"
-      },
-      {
-        q: "กล่องเล็กๆ ที่เรียกว่า intestinal gland สร้างเอนไซม์ใดเพิ่มเติมในลำไส้เล็ก?",
-        options: ["amylase, lipase", "pepsin, protease", "catalase, peroxidase", "peptidase, nucleotidase, maltase"],
-        correct: 3,
-        icon: "🔬"
-      },
-      {
-        q: "เมื่ออาหารได้รับการข่มเหงจากกระเพาะเข้าสู่ลำไส้เล็ก ความขุ่นมืดเรียกชื่ออะไร?",
-        options: ["bolus", "feces", "gastric juice", "chyme"],
-        correct: 3,
-        icon: "🥣"
-      },
-      {
-        q: "การดูดซึมน้ำและแร่ธาตุเกิดขึ้นส่วนใหญ่ที่อวัยวะใด?",
-        options: ["ลำไส้เล็ก", "กระเพาะอาหาร", "ปาก", "ลำไส้ใหญ่"],
-        correct: 0,
-        icon: "💧"
-      },
-      {
-        q: "เกลือน้ำดี (bile salts) ทำให้ไขมันแตกตัวเป็นหยดเล็กอยู่ที่ขั้นตอนใด?",
-        options: ["absorption", "complete digestion", "fermentation", "emulsification"],
-        correct: 3,
-        icon: "🧈"
-      },
-      {
-        q: "สารลูกโจงจดทะเบียนของลำไส้เล็ก (Brunner glands) สร้างสารใด?",
-        options: ["pepsin", "trypsin", "gastric juice", "alkaline mucus ที่ปกป้องจากกรด"],
-        correct: 3,
-        icon: "🛡️"
-      },
-      {
-        q: "enterokinase ทำหน้าที่อะไร?",
-        options: ["แปลง pepsinogen เป็น pepsin", "แปลง glucose เป็น pyruvate", "แปลง amino acid เป็น ammonia", "แปลง trypsinogen เป็น trypsin"],
-        correct: 3,
-        icon: "⚙️"
-      },
-      {
-        q: "คาร์บอกซิเพปติดาส (carboxypeptidase) ย่อยโปรตีนโดยการตัด?",
-        options: ["peptide bonds ตรงกลางสายโปรตีน", "ทั้งปลายและปลายทั้งสอง", "เฉพาะ aromatic amino acids", "amino acid จากปลายของสายโปรตีน"],
-        correct: 3,
-        icon: "🧬"
-      },
-      {
-        q: "ลิ้นมีหน้าที่ใดในการเคี้ยวอาหาร?",
-        options: ["ผลิตเอนไซม์", "ดูดซึมสารอาหาร", "หลั่งกรด", "ผสมอาหารกับน้ำลายและคลุกเคล้า"],
-        correct: 3,
-        icon: "👅"
-      },
-      {
-        q: "ลำไส้เล็กมีความยาวประมาณเท่าไร?",
-        options: ["1-2 เมตร", "5-7 เมตร", "10-15 เมตร", "3-4 เมตร"],
-        correct: 3,
-        icon: "📏"
-      },
-      {
-        q: "ลำไส้ใหญ่มีความยาวประมาณเท่าไร?",
-        options: ["5 เมตร", "10 เมตร", "0.5 เมตร", "1.5 เมตร"],
-        correct: 3,
-        icon: "📏"
-      },
-      {
-        q: "การเพิ่มพื้นผิวของลำไส้เล็กด้วยการพับเรียกว่า?",
-        options: ["villi", "microvilli", "crypts", "plicae circulares"],
-        correct: 3,
-        icon: "〰️"
-      },
-      {
-        q: "ช่องแคบที่ลึกลงไประหว่าง villi ในลำไส้เล็กเรียกว่า?",
-        options: ["stomach pits", "pancreatic ducts", "bile ducts", "intestinal crypts (Crypts of Lieberkühn)"],
-        correct: 3,
-        icon: "🕳️"
-      },
-      {
-        q: "cholecystokinin (CCK) ถูกผลิตโดยเซลล์ใด?",
-        options: ["parietal cells ในกระเพาะ", "pancreatic beta cells", "chief cells ในกระเพาะ", "enteroendocrine cells ในลำไส้เล็ก"],
-        correct: 3,
-        icon: "🔬"
-      },
-      {
-        q: "bicarbonate buffer จากตับอ่อนทำปฏิกิริยากับกรดในอาหารเพื่อ?",
-        options: ["เพิ่มการหลั่ง HCl", "ลดการหลั่งเอนไซม์", "ปกป้องตับจากการโคลน", "นำเข้า pH ของ chyme ให้เป็นกลาง"],
-        correct: 3,
-        icon: "⚗️"
-      },
-      {
-        q: "secretin เป็น hormone ที่กระตุ้นการหลั่ง?",
-        options: ["pepsin จากกระเพาะ", "CCK จากลำไส้เล็ก", "hydrochloric acid จากกระเพาะ", "bicarbonate จากตับอ่อน"],
-        correct: 3,
-        icon: "🔔"
-      },
-      {
-        q: "stomach นำตัวเลือกไหนมากที่สุด?",
-        options: ["ดูดซึมสารอาหาร", "ผลิตเอนไซม์", "เหวี่ยงน้ำ", "เก็บอาหารและเริ่มการคลุกเคล้า"],
-        correct: 3,
-        icon: "🎯"
-      },
-      {
-        q: "ส่วนใดของลำไส้เล็กดูดซึมสารอาหารมากที่สุด?",
-        options: ["duodenum (ส่วนต้น)", "jejunum (ส่วนกลาง)", "ทั้งสามส่วนดูดซึมเท่ากัน", "ileum (ส่วนปลาย)"],
-        correct: 3,
-        icon: "🔬"
-      },
-      {
-        q: "protease inhibitor ใดถูกหลั่งจากตับอ่อนเพื่อหยุดการย่อยในตัวของตับ?",
-        options: ["pepsin inhibitor", "lipase inhibitor", "amylase inhibitor", "pancreatic trypsin inhibitor"],
-        correct: 3,
-        icon: "🛑"
-      },
-      {
-        q: "nuclease ย่อยเนื้อหา DNA และ RNA โดยการแยก?",
-        options: ["hydrogen bonds", "disulfide bonds", "glycosidic bonds", "phosphodiester bonds"],
-        correct: 3,
-        icon: "🧬"
-      },
-      {
-        q: "maltase สลาย maltose เป็น?",
-        options: ["glucose และ galactose", "fructose 2 โมเลกุล", "glucose และ fructose", "glucose 2 โมเลกุล"],
-        correct: 3,
-        icon: "🍞"
-      },
-      {
-        q: "การนำขนส่ง (active transport) ของสารอาหารในลำไส้เล็กต้องการ?",
-        options: ["ความแตกต่างของความเข้มข้น", "การขยายตัวของกระเพาะ", "การหลั่ง HCl", "ATP"],
-        correct: 3,
-        icon: "⚡"
-      },
-      {
-        q: "lymphatic system ดูดซึมสารอาหารใด?",
-        options: ["glucose", "amino acids", "minerals", "ไขมันและ fat-soluble vitamins"],
-        correct: 3,
-        icon: "🩸"
-      },
-      {
-        q: "peristalsis คือการหด/ยืดของกล้ามเนื้อเรียบซึ่งทำให้เกิด?",
-        options: ["เพิ่มการดูดซึมในกระเพาะ", "ลด pH ในลำไส้เล็ก", "การหลั่งน้ำลาย", "การเคลื่อนที่ของอาหารผ่านทางเดินอาหาร"],
-        correct: 3,
-        icon: "〰️"
-      },
-      {
-        q: "colon ดูดซึมสารอาหารหลักใด?",
-        options: ["ไขมัน", "โปรตีน", "glucose", "น้ำและแร่ธาตุ"],
-        correct: 3,
-        icon: "💧"
-      },
-      {
-        q: "defecation reflex ชักนำโดยเซลล์ใด?",
-        options: ["pain receptors", "taste receptors", "olfactory receptors", "stretch receptors ในดีกรี rectum"],
-        correct: 3,
-        icon: "🚽"
-      },
-      {
-        q: "ร่องภาคคุณหมิ (Goblet cells) ในลำไส้เล็กผลิต?",
-        options: ["pepsin", "bile", "hydrochloric acid", "mucus ซึ่งป้องกันและอำนวยความสะดวกต่อการเคลื่อนที่"],
-        correct: 3,
-        icon: "🫧"
-      },
-      {
-        q: "ตับ ตับอ่อน และลำไส้เล็ก ส่วนใดแสดงปฏิกิริยาต่อ gastrin?",
-        options: ["ตับอ่อนหลั่งเอนไซม์", "ตับหลั่งน้ำดี", "ลำไส้เล็กหลั่ง secretin", "กระเพาะหลั่ง HCl เพิ่ม"],
-        correct: 3,
-        icon: "🔔"
-      }
-    ];
-    
-    // ฟังก์ชันเลือกจำนวนผู้เล่น
-    function selectPlayerCount(count) {
-      playerCount = count;
-      document.getElementById('player-select-screen').classList.add('hidden');
-      document.getElementById('name-input-screen').classList.remove('hidden');
-      createNameInputs();
-    }
-    
-    // สร้างช่องกรอกชื่อ
-    function createNameInputs() {
-      const container = document.getElementById('name-inputs');
-      container.innerHTML = '';
-      
-      const emojis = ['🔴', '🔵', '🟢', '🟡', '🟣', '🩷'];
-      
-      for (let i = 0; i < playerCount; i++) {
-        const div = document.createElement('div');
-        div.className = 'flex items-center gap-3';
-        div.innerHTML = `
-          <span class="text-3xl">${emojis[i]}</span>
-          <input type="text" id="player-name-${i}" placeholder="ชื่อผู้เล่น ${i + 1}" 
-            class="flex-1 text-xl p-3 rounded-xl border-2 border-amber-300 focus:border-amber-500 focus:outline-none"
-            maxlength="10">
-        `;
-        container.appendChild(div);
-      }
-    }
-    
-    // ย้อนกลับ
-    function goBack() {
-      document.getElementById('name-input-screen').classList.add('hidden');
-      document.getElementById('player-select-screen').classList.remove('hidden');
-    }
-    
-    // เริ่มเกม
-    function startGame() {
-      players = [];
-      for (let i = 0; i < playerCount; i++) {
-        const nameInput = document.getElementById(`player-name-${i}`);
-        const name = nameInput.value.trim() || `ผู้เล่น ${i + 1}`;
-        players.push({
-          name: name,
-          position: 0,
-          color: playerColors[i]
-        });
-      }
-      
-      currentPlayerIndex = 0;
-      
-      document.getElementById('name-input-screen').classList.add('hidden');
-      document.getElementById('game-screen').classList.remove('hidden');
-      
-      createBoard();
-      updatePlayersInfo();
-      updateCurrentPlayer();
-    }
-    
-    // สร้างกระดาน
-    function createBoard() {
-      const board = document.getElementById('game-board');
-      board.innerHTML = '';
-      
-      // สร้างช่อง 0-40 (41 ช่อง) แบบงูเลื้อย
-      const cells = [];
-      for (let i = 0; i <= 40; i++) {
-        cells.push(i);
-      }
-      
-      // จัดเรียงแบบงูเลื้อย 7 คอลัมน์ 6 แถว
-      const rows = [];
-      for (let row = 0; row < 6; row++) {
-        const rowCells = [];
-        for (let col = 0; col < 7; col++) {
-          const index = row * 7 + col;
-          if (index <= 40) {
-            rowCells.push(index);
-          } else {
-            rowCells.push(null);
-          }
-        }
-        // สลับทิศทางสำหรับแถวคี่
-        if (row % 2 === 1) {
-          rowCells.reverse();
-        }
-        rows.push(rowCells);
-      }
-      
-      // แสดงจากแถวล่างขึ้นบน
-      rows.reverse();
-      
-      for (const row of rows) {
-        for (const cellNum of row) {
-          const cell = document.createElement('div');
-          
-          if (cellNum === null) {
-            cell.className = 'cell bg-transparent border-transparent';
-          } else {
-            let cellClass = 'normal-cell';
-            let icon = '';
-            
-            if (cellNum === 0) {
-              cellClass = 'start-cell';
-              icon = '🚀';
-            } else if (cellNum === 40) {
-              cellClass = 'end-cell';
-              icon = '🏆';
-            } else if (snakes.includes(cellNum)) {
-              cellClass = 'snake-cell';
-              icon = '🐍';
-            } else if (ladders.includes(cellNum)) {
-              cellClass = 'ladder-cell';
-              icon = '🪜';
-            }
-            
-            cell.className = `cell ${cellClass}`;
-            cell.id = `cell-${cellNum}`;
-            cell.innerHTML = `
-              <div class="flex flex-col items-center justify-center">
-                <span class="text-lg font-bold text-amber-900">${cellNum}</span>
-                ${icon ? `<span class="text-sm">${icon}</span>` : ''}
-              </div>
-              <div id="tokens-${cellNum}" class="absolute inset-0 flex flex-wrap items-center justify-center gap-0.5 p-1"></div>
-            `;
-          }
-          
-          board.appendChild(cell);
-        }
-      }
-      
-      updateTokens();
-    }
-    
-    // อัพเดทตำแหน่งหมาก
-    function updateTokens() {
-      // ลบหมากเก่าทั้งหมด
-      for (let i = 0; i <= 40; i++) {
-        const container = document.getElementById(`tokens-${i}`);
-        if (container) container.innerHTML = '';
-      }
-      
-      // วางหมากใหม่
-      players.forEach((player, index) => {
-        const container = document.getElementById(`tokens-${player.position}`);
-        if (container) {
-          const token = document.createElement('div');
-          token.className = 'player-token';
-          token.style.backgroundColor = player.color;
-          token.textContent = index + 1;
-          token.style.position = 'relative';
-          container.appendChild(token);
-        }
-      });
-    }
-    
-    // อัพเดทข้อมูลผู้เล่น
-    function updatePlayersInfo() {
-      const container = document.getElementById('players-info');
-      container.innerHTML = '';
-      
-      players.forEach((player, index) => {
-        const div = document.createElement('div');
-        const isActive = index === currentPlayerIndex;
-        div.className = `flex items-center gap-2 px-4 py-2 rounded-full ${isActive ? 'ring-4 ring-amber-400 bg-white shadow-lg' : 'bg-white/70'}`;
-        div.innerHTML = `
-          <div class="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-sm" style="background-color: ${player.color}">${index + 1}</div>
-          <span class="font-bold text-amber-800">${player.name}</span>
-          <span class="bg-amber-100 px-2 py-0.5 rounded text-amber-700 font-semibold">ช่อง ${player.position}</span>
-        `;
-        container.appendChild(div);
-      });
-    }
-    
-    // อัพเดทผู้เล่นปัจจุบัน
-    function updateCurrentPlayer() {
-      document.getElementById('current-player-name').textContent = players[currentPlayerIndex].name;
-      document.getElementById('current-player-name').style.color = players[currentPlayerIndex].color;
-    }
-    
-    // ทอยลูกเต๋า
-    function rollDice() {
-      if (isRolling) return;
-      isRolling = true;
-      
-      const dice = document.getElementById('dice');
-      const resultDiv = document.getElementById('dice-result');
-      const rollBtn = document.getElementById('roll-btn');
-      
-      dice.classList.add('dice-rolling');
-      rollBtn.disabled = true;
-      rollBtn.classList.add('opacity-50');
-      
-      // แอนิเมชันทอยลูกเต๋า
-      let count = 0;
-      const rollInterval = setInterval(() => {
-        const randomNum = Math.floor(Math.random() * 6) + 1;
-        dice.textContent = getDiceEmoji(randomNum);
-        count++;
-        
-        if (count >= 15) {
-          clearInterval(rollInterval);
-          
-          // ผลลัพธ์สุดท้าย
-          const finalResult = Math.floor(Math.random() * 6) + 1;
-          dice.textContent = getDiceEmoji(finalResult);
-          dice.classList.remove('dice-rolling');
-          resultDiv.textContent = `ได้ ${finalResult} แต้ม!`;
-          
-          pendingMove = finalResult;
-          landedCell = Math.min(players[currentPlayerIndex].position + finalResult, 40);
-          
-          // แสดงคำถาม
-          setTimeout(() => {
-            showQuestion();
-          }, 500);
-        }
-      }, 80);
-    }
-    
-    // รับ emoji ลูกเต๋า
-    function getDiceEmoji(num) {
-      const diceEmojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-      return diceEmojis[num - 1];
-    }
-    
-    // แสดงคำถาม
-    function showQuestion() {
-      currentQuestion = questions[Math.floor(Math.random() * questions.length)];
-      
-      const isSnake = snakes.includes(landedCell);
-      const isLadder = ladders.includes(landedCell);
-      
-      let context = `จะเดินไปช่อง ${landedCell}`;
-      if (isSnake) context = `⚠️ ช่อง ${landedCell} มีงู! ตอบถูกจะไม่โดนกัด`;
-      if (isLadder) context = `🎉 ช่อง ${landedCell} มีบันได! ตอบถูกจะได้ขึ้น 3 ช่อง`;
-      
-      document.getElementById('question-icon').textContent = currentQuestion.icon;
-      document.getElementById('question-context').textContent = context;
-      document.getElementById('question-text').textContent = currentQuestion.q;
-      
-      const optionsContainer = document.getElementById('answer-options');
-      optionsContainer.innerHTML = '';
-      
-      currentQuestion.options.forEach((option, index) => {
-        const btn = document.createElement('button');
-        btn.className = 'w-full text-left px-4 py-3 bg-amber-100 hover:bg-amber-200 rounded-xl font-semibold text-amber-800 transition-all transform hover:scale-102';
-        btn.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
-        btn.onclick = () => checkAnswer(index);
-        optionsContainer.appendChild(btn);
-      });
-      
-      document.getElementById('question-modal').classList.remove('hidden');
-    }
-    
-    // ตรวจคำตอบ
-    function checkAnswer(selectedIndex) {
-      document.getElementById('question-modal').classList.add('hidden');
-      
-      const isCorrect = selectedIndex === currentQuestion.correct;
-      const player = players[currentPlayerIndex];
-      const isSnake = snakes.includes(landedCell);
-      const isLadder = ladders.includes(landedCell);
-      
-      let resultIcon, resultTitle, resultMessage;
-      let newPosition = player.position;
-      
-      if (isCorrect) {
-        resultIcon = '✅';
-        resultTitle = 'ถูกต้อง!';
-        
-        if (isSnake) {
-          resultMessage = `งูไม่กัด! อยู่ที่ช่อง ${landedCell}`;
-          newPosition = landedCell;
-        } else if (isLadder) {
-          newPosition = Math.min(landedCell + 3, 40);
-          resultMessage = `ขึ้นบันไดไป 3 ช่อง! ไปช่อง ${newPosition}`;
-        } else {
-          newPosition = landedCell;
-          resultMessage = `เดินไปช่อง ${newPosition}`;
-        }
-      } else {
-        resultIcon = '❌';
-        resultTitle = 'ผิด!';
-        
-        if (isSnake) {
-          newPosition = Math.max(player.position - 3, 0);
-          resultMessage = `โดนงูกัด! ถอยไป 3 ช่อง ไปช่อง ${newPosition}`;
-        } else if (isLadder) {
-          resultMessage = `อดขึ้นบันได อยู่ที่เดิมช่อง ${player.position}`;
-          newPosition = player.position;
-        } else {
-          resultMessage = `อยู่ที่เดิมช่อง ${player.position}`;
-          newPosition = player.position;
-        }
-      }
-      
-      player.position = newPosition;
-      
-      document.getElementById('result-icon').textContent = resultIcon;
-      document.getElementById('result-title').textContent = resultTitle;
-      document.getElementById('result-title').className = `text-3xl font-bold mb-2 ${isCorrect ? 'text-green-600' : 'text-red-600'}`;
-      document.getElementById('result-message').textContent = resultMessage;
-      
-      document.getElementById('result-modal').classList.remove('hidden');
-    }
-    
-    // ปิด modal ผลลัพธ์
-    function closeResultModal() {
-      document.getElementById('result-modal').classList.add('hidden');
-      
-      updateTokens();
-      updatePlayersInfo();
-      
-      // ตรวจสอบผู้ชนะ
-      if (players[currentPlayerIndex].position >= 40) {
-        showWinner();
-        return;
-      }
-      
-      // เปลี่ยนผู้เล่น
-      currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
-      updateCurrentPlayer();
-      updatePlayersInfo();
-      
-      // รีเซ็ตปุ่ม
-      isRolling = false;
-      const rollBtn = document.getElementById('roll-btn');
-      rollBtn.disabled = false;
-      rollBtn.classList.remove('opacity-50');
-      document.getElementById('dice-result').textContent = 'กดลูกเต๋าเพื่อทอย';
-    }
-    
-    // แสดงผู้ชนะ
-    function showWinner() {
-      document.getElementById('winner-name').textContent = `${players[currentPlayerIndex].name} ชนะ!`;
-      document.getElementById('winner-modal').classList.remove('hidden');
-    }
-    
-    // เริ่มเกมใหม่
-    function restartGame() {
-      document.getElementById('winner-modal').classList.add('hidden');
-      document.getElementById('game-screen').classList.add('hidden');
-      document.getElementById('player-select-screen').classList.remove('hidden');
-      
-      players = [];
-      currentPlayerIndex = 0;
-      isRolling = false;
-    }
-    
-    // SDK Initialization
+    // Initialize Element SDK
     if (window.elementSdk) {
       window.elementSdk.init({
         defaultConfig,
         onConfigChange: async (newConfig) => {
           config = { ...defaultConfig, ...newConfig };
-          const titleEl = document.getElementById('main-title');
-          if (titleEl && config.game_title) {
-            titleEl.textContent = config.game_title;
-          }
+          document.getElementById('main-title').textContent = config.game_title || defaultConfig.game_title;
         },
-        mapToCapabilities: (config) => ({
+        mapToCapabilities: (cfg) => ({
           recolorables: [],
           borderables: [],
           fontEditable: undefined,
           fontSizeable: undefined
         }),
-        mapToEditPanelValues: (config) => new Map([
-          ['game_title', config.game_title || defaultConfig.game_title]
+        mapToEditPanelValues: (cfg) => new Map([
+          ['game_title', cfg.game_title || defaultConfig.game_title]
         ])
       });
     }
+    
+    function selectBoardSize(size) {
+      gameState.boardSize = size;
+      const btn4x4 = document.getElementById('btn-4x4');
+      const btn6x6 = document.getElementById('btn-6x6');
+      
+      if (size === '4x4') {
+        btn4x4.classList.add('ring-4', 'ring-pink-300');
+        btn4x4.classList.remove('from-pink-400', 'to-pink-500');
+        btn4x4.classList.add('from-pink-500', 'to-pink-600');
+        btn6x6.classList.remove('ring-4', 'ring-indigo-300');
+        btn6x6.classList.remove('from-indigo-500', 'to-indigo-600');
+        btn6x6.classList.add('from-indigo-400', 'to-indigo-500');
+        gameState.totalPairs = 8;
+      } else {
+        btn6x6.classList.add('ring-4', 'ring-indigo-300');
+        btn6x6.classList.remove('from-indigo-400', 'to-indigo-500');
+        btn6x6.classList.add('from-indigo-500', 'to-indigo-600');
+        btn4x4.classList.remove('ring-4', 'ring-pink-300');
+        btn4x4.classList.remove('from-pink-500', 'to-pink-600');
+        btn4x4.classList.add('from-pink-400', 'to-pink-500');
+        gameState.totalPairs = 18;
+      }
+    }
+    
+    function selectPlayers(count) {
+      gameState.playerCount = count;
+      showScreen('screen-names');
+      generateNameInputs();
+    }
+    
+    function generateNameInputs() {
+      const container = document.getElementById('name-inputs');
+      container.innerHTML = '';
+      
+      for (let i = 0; i < gameState.playerCount; i++) {
+        const div = document.createElement('div');
+        div.className = 'relative';
+        div.innerHTML = `
+          <label class="block text-gray-600 text-sm mb-1">ผู้เล่นที่ ${i + 1}</label>
+          <input type="text" id="player-name-${i}" 
+            placeholder="ใส่ชื่อ..." 
+            class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-colors text-lg"
+            value="ผู้เล่น ${i + 1}">
+        `;
+        container.appendChild(div);
+      }
+    }
+    
+    function goBack() {
+      showScreen('screen-players');
+    }
+    
+    function showScreen(screenId) {
+      ['screen-players', 'screen-names', 'screen-game', 'screen-results'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(screenId).classList.remove('hidden');
+    }
+    
+    function startGame() {
+      // Collect player names
+      gameState.players = [];
+      for (let i = 0; i < gameState.playerCount; i++) {
+        const nameInput = document.getElementById(`player-name-${i}`);
+        const name = nameInput.value.trim() || `ผู้เล่น ${i + 1}`;
+        gameState.players.push({ name, score: 0 });
+      }
+      
+      // Reset game state
+      gameState.currentPlayerIndex = 0;
+      gameState.matchedPairs = 0;
+      gameState.flippedCards = [];
+      gameState.isProcessing = false;
+      
+      // Generate cards
+      generateCards();
+      
+      // Show game screen
+      showScreen('screen-game');
+      renderScoreboard();
+      renderBoard();
+      updateCurrentPlayer();
+    }
+    
+    function generateCards() {
+      const pairsNeeded = gameState.totalPairs;
+      const selectedPairs = cardPairs.slice(0, pairsNeeded);
+      
+      gameState.cards = [];
+      
+      selectedPairs.forEach((pair, index) => {
+        gameState.cards.push({
+          id: index * 2,
+          pairId: index,
+          type: 'organ',
+          content: pair.organ,
+          isFlipped: false,
+          isMatched: false
+        });
+        gameState.cards.push({
+          id: index * 2 + 1,
+          pairId: index,
+          type: 'function',
+          content: pair.function,
+          isFlipped: false,
+          isMatched: false
+        });
+      });
+      
+      // Shuffle cards
+      for (let i = gameState.cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [gameState.cards[i], gameState.cards[j]] = [gameState.cards[j], gameState.cards[i]];
+      }
+    }
+    
+    function renderScoreboard() {
+      const container = document.getElementById('player-scores');
+      container.innerHTML = '';
+      
+      gameState.players.forEach((player, index) => {
+        const isActive = index === gameState.currentPlayerIndex;
+        const div = document.createElement('div');
+        div.id = `player-score-${index}`;
+        div.className = `glass-card rounded-xl px-4 py-2 ${isActive ? 'player-active ring-2 ring-blue-400' : ''}`;
+        div.innerHTML = `
+          <div class="text-sm text-gray-600">${player.name}</div>
+          <div class="text-2xl font-bold bg-gradient-to-r ${playerColors[index]} bg-clip-text text-transparent">${player.score} คะแนน</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+    
+    function renderBoard() {
+      const container = document.getElementById('game-board');
+      const gridCols = gameState.boardSize === '4x4' ? 'grid-cols-4' : 'grid-cols-6';
+      const cardSize = gameState.boardSize === '4x4' ? 'h-24 sm:h-28' : 'h-16 sm:h-20';
+      
+      container.className = `grid ${gridCols} gap-2 sm:gap-3`;
+      container.innerHTML = '';
+      
+      gameState.cards.forEach((card, index) => {
+        const cardEl = document.createElement('div');
+        cardEl.id = `card-${index}`;
+        cardEl.className = `card-container ${cardSize} cursor-pointer ${card.isMatched ? 'card-matched' : ''} ${card.isFlipped ? 'card-flipped' : ''}`;
+        cardEl.onclick = () => flipCard(index);
+        
+        const bgColor = card.type === 'organ' ? 'from-cyan-400 to-blue-500' : 'from-pink-400 to-rose-500';
+        const textSize = gameState.boardSize === '4x4' ? 'text-xs sm:text-sm' : 'text-[10px] sm:text-xs';
+        
+        cardEl.innerHTML = `
+          <div class="card-inner relative w-full h-full">
+            <div class="card-front absolute inset-0 bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl flex items-center justify-center shadow-lg">
+              <span class="text-3xl sm:text-4xl">❓</span>
+            </div>
+            <div class="card-back absolute inset-0 bg-gradient-to-br ${bgColor} rounded-xl flex items-center justify-center p-1 sm:p-2 shadow-lg">
+              <span class="text-white font-medium ${textSize} text-center leading-tight">${card.content}</span>
+            </div>
+          </div>
+        `;
+        
+        container.appendChild(cardEl);
+      });
+    }
+    
+    function flipCard(index) {
+      if (gameState.isProcessing) return;
+      
+      const card = gameState.cards[index];
+      if (card.isFlipped || card.isMatched) return;
+      if (gameState.flippedCards.length >= 2) return;
+      
+      // Flip the card
+      card.isFlipped = true;
+      gameState.flippedCards.push(index);
+      
+      const cardEl = document.getElementById(`card-${index}`);
+      cardEl.classList.add('card-flipped');
+      
+      // Check for match when 2 cards are flipped
+      if (gameState.flippedCards.length === 2) {
+        gameState.isProcessing = true;
+        setTimeout(checkMatch, 1000);
+      }
+    }
+    
+    function checkMatch() {
+      const [index1, index2] = gameState.flippedCards;
+      const card1 = gameState.cards[index1];
+      const card2 = gameState.cards[index2];
+      
+      // Check if they're a matching pair (same pairId, different types)
+      const isMatch = card1.pairId === card2.pairId && card1.type !== card2.type;
+      
+      if (isMatch) {
+        // Match found!
+        card1.isMatched = true;
+        card2.isMatched = true;
+        gameState.matchedPairs++;
+        gameState.players[gameState.currentPlayerIndex].score++;
+        
+        // Add matched class
+        document.getElementById(`card-${index1}`).classList.add('card-matched', 'celebrate');
+        document.getElementById(`card-${index2}`).classList.add('card-matched', 'celebrate');
+        
+        showMessage('🎉 จับคู่ถูกต้อง! เล่นต่อได้อีกครั้ง', 'text-green-300');
+        
+        // Update scoreboard
+        renderScoreboard();
+        
+        // Check if game is over
+        if (gameState.matchedPairs === gameState.totalPairs) {
+          setTimeout(endGame, 1500);
+        }
+      } else {
+        // No match - flip cards back
+        showMessage('❌ ไม่ตรงกัน เปลี่ยนตา', 'text-red-300');
+        
+        setTimeout(() => {
+          card1.isFlipped = false;
+          card2.isFlipped = false;
+          document.getElementById(`card-${index1}`).classList.remove('card-flipped');
+          document.getElementById(`card-${index2}`).classList.remove('card-flipped');
+          
+          // Next player's turn
+          gameState.currentPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.playerCount;
+          renderScoreboard();
+          updateCurrentPlayer();
+          clearMessage();
+        }, 500);
+      }
+      
+      gameState.flippedCards = [];
+      gameState.isProcessing = false;
+    }
+    
+    function updateCurrentPlayer() {
+      const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+      document.getElementById('current-player').textContent = currentPlayer.name;
+    }
+    
+    function showMessage(text, colorClass) {
+      const msgEl = document.getElementById('game-message');
+      msgEl.textContent = text;
+      msgEl.className = `text-center mt-4 font-medium text-lg ${colorClass}`;
+    }
+    
+    function clearMessage() {
+      document.getElementById('game-message').textContent = '';
+    }
+    
+    function endGame() {
+      showScreen('screen-results');
+      
+      // Sort players by score
+      const sortedPlayers = [...gameState.players].sort((a, b) => b.score - a.score);
+      const highestScore = sortedPlayers[0].score;
+      const winners = sortedPlayers.filter(p => p.score === highestScore);
+      
+      // Announce winner(s)
+      const winnerEl = document.getElementById('winner-announce');
+      if (winners.length > 1) {
+        winnerEl.textContent = `🤝 เสมอกัน! ${winners.map(w => w.name).join(' และ ')}`;
+      } else {
+        winnerEl.textContent = `🥇 ผู้ชนะคือ ${winners[0].name}!`;
+      }
+      
+      // Show final scores
+      const scoresEl = document.getElementById('final-scores');
+      scoresEl.innerHTML = '';
+      
+      sortedPlayers.forEach((player, index) => {
+        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎖️';
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between glass-card rounded-xl px-4 py-3';
+        div.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">${medal}</span>
+            <span class="font-medium text-gray-800">${player.name}</span>
+          </div>
+          <span class="font-bold text-lg text-purple-600">${player.score} คะแนน</span>
+        `;
+        scoresEl.appendChild(div);
+      });
+    }
+    
+    function restartGame() {
+      showScreen('screen-players');
+      gameState = {
+        playerCount: 1,
+        boardSize: gameState.boardSize,
+        players: [],
+        currentPlayerIndex: 0,
+        cards: [],
+        flippedCards: [],
+        matchedPairs: 0,
+        totalPairs: gameState.boardSize === '4x4' ? 8 : 18,
+        isProcessing: false
+      };
+    }
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d61f86ba6179e22',t:'MTc3MjQ3MDk2MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d658ed194779c41',t:'MTc3MjUwODU3Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
